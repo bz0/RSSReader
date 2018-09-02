@@ -1,8 +1,13 @@
 <?php
 namespace bz0\RSSReader;
+use bz0\RSSReader\Parser\RSS1Parser;
 
 class RSSReader{
     private $parserList;
+
+    public function __construct(){
+        $this->parserList[] = new RSS1Parser();
+    }
     
     public function setParser(Parser $parser){
         $this->parserList[] = $parser;
@@ -11,7 +16,7 @@ class RSSReader{
     public function read($url){
         $xml = simplexml_load_file($url);
         if (!$xml){
-            throw new Exception ('Error: Can not load xml file');
+            throw new \Exception ('Error: Can not load xml file');
         }
         
         return $xml;
@@ -23,7 +28,7 @@ class RSSReader{
         $rss = [];
         
         if (!$this->parserList){
-            throw new Exception ('Error: Parser not set');
+            throw new \Exception ('Error: Parser not set');
         }
         
         foreach($this->parserList as $parser){
@@ -37,7 +42,7 @@ class RSSReader{
         var_dump($rss);
         
         if(!$rss){
-            throw new Exception ('Error: Failed to parse rss');
+            throw new \Exception ('Error: Failed to parse rss');
         }
         
         return $rss;

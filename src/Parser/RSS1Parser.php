@@ -1,92 +1,72 @@
 <?php
 namespace bz0\RSSReader\Parser;
+use bz0\RSSReader\Iterator\RSS1\Items;
+use bz0\RSSReader\Iterator\RSS1\Channel;
+use bz0\RSSReader\Iterator\RSS1\Channels;
+use bz0\RSSReader\Iterator\RSS1\ChannelMember;
+use bz0\RSSReader\Iterator\RSS1\ItemMember;
+use bz0\RSSReader\Iterator\RSS1\Item;
+
 class RSS1Parser implements Parser{
-    private $rssItems;
-    private $rssChannels;
-    private $rssChannelOption;
+    private $items;
+    private $channels;
+    private $channelMember;
     private $xml;
     const NAMESPACE = 'http://purl.org/dc/elements/1.1/';
     
     public function __construct(){
-        $this->rssItems         = new RSSItems();
-        $this->rssChannels      = new RSSChannels();
-        $this->rssChannelOption = new RSSChannelOption();
+        $this->items         = new Items();
+        $this->channels      = new Channels();
+        $this->channelMember = new ChannelMember();
     }
     
     public function getChannel($xml){
-        $title = "";
+        //required
         if (isset($xml->channel->title)){
-            $title = $xml->channel->title;
+            $this->channelMember->title = $xml->channel->title;
         }
-        
-        $description = "";
+
         if (isset($xml->channel->description)){
-            $description = $xml->channel->description;
+            $this->channelMember->description = $xml->channel->description;
         }
         
-        $link = "";
         if (isset($xml->channel->description)){
-            $link = $xml->channel->link;
+            $this->channelMember->link = $xml->channel->link;
+        }
+
+        //options
+        if ($xml->channel->children(self::NAMESPACE) !== null){
+            $this->channelMember->options = (array)$xml->channel->children(self::NAMESPACE);
         }
         
-        if (isset($xml->channel->language)){
-            $this->rssChannelOption->language = $xml->channel->language;
-        }
+        $this->channels->add(new Channel($this->channelMember));
         
-        if (isset($xml->channel->date)){
-            $this->rssChannelOption->pubDate = $xml->channel->date;
-        }
-        
-        $this->rssChannels->add(new RSSChannel(
-            $title,
-            $description,
-            $link,
-            $this->rssChannelOption
-        ));
-        
-        return $this->rssChannels;
+        return $this->channels;
     }
     
     public function getItems($xml){
         foreach($xml->item as $item){
-            $title = "";
+            $itemMember = new ItemMember();
             if (isset($item->title)){
-                $title = $item->title;
+                $itemMember->title = $item->title;
             }
-            
-            $description = "";
+
             if (isset($item->description)){
-                $description = $item->description;
+                $itemMember->description = $item->description;
             }
-            
-            $link = "";
+
             if (isset($item->link)){
-                $link = $item->link;
+                $itemMember->link = $item->link;
+            }
+
+            if ($item->children(self::NAMESPACE) !== null){
+                $itemMember->options = (array)$item->children(self::NAMESPACE);
             }
             
-            $date = "";
-            if (isset($item->children(self::NAMESPACE)->date)){
-                $date = $item->children(self::NAMESPACE)->date;
-            }else if (isset($item->date)){
-                $date = $item->date;
-            }
-            
-            $language = "";
-            if (isset($item->children(self::NAMESPACE)->language)){
-                $language = $item->children(self::NAMESPACE)->language;
-            }else if (isset($item->language)){
-                $language = $item->language;
-            }
-            
-            $this->rssItems->add(new RSSItem(
-                $title,
-                $description,
-                $link,
-                $date
-            ));
+            $this->items->add(new Item($itemMember));
         }
         
-        return $this->rssItems;
+        return $this->items;
     }
     
     public function accept($xml){
